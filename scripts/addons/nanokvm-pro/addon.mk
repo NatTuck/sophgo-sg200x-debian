@@ -67,11 +67,14 @@ HOST_COREPACK = $(HOST_NODEJS_BIN_ENV) corepack
 HOST_NPM = $(HOST_NODEJS_BIN_ENV) npm
 HOST_PNPM = $(HOST_NODEJS_BIN_ENV) pnpm
 
+NANOKVM_PRO_PNPM_VERSION = 10.29.3
+NANOKVM_PRO_PNPM_SHA_SUM = f7315fb659932216d489e3ed4c14f47bc58ec6c6
+
 $(BUILDDIR)/nanokvm-pro/nanokvm_pro_latest.json:
 	@mkdir -p $(BUILDDIR)/nanokvm-pro
 	@cd $(BUILDDIR)/nanokvm-pro ; wget -q -O nanokvm_pro_latest.json "$(NANOKVM_PRO_BASE_URL)/nanokvm_pro_latest.json?now=$(shell date +%s)" || wget -q -O nanokvm_pro_latest.json "$(NANOKVM_PRO_ARCH_URL)/nanokvm_pro_latest.json?now=$(shell date +%s)"
 
-$(BUILDDIR)/nanokvm-pro-prepare-stamp: $(BUILDDIR)/golang-toolchain-stamp $(BUILDDIR)/nanokvm-pro/nanokvm_pro_latest.json
+$(BUILDDIR)/nanokvm-pro-prepare-stamp: $(BUILDDIR)/golang-toolchain-stamp $(BUILDDIR)/npm-stamp $(BUILDDIR)/nanokvm-pro/nanokvm_pro_latest.json
 	@echo "$(COLOUR_GREEN)Installing nanokvm-pro for $(BOARD)$(END_COLOUR)"
 	@touch /rootfs/boot/check_resize2fs
 	@touch /rootfs/boot/first_time_boot
@@ -101,7 +104,7 @@ $(BUILDDIR)/nanokvm-pro-debs-stamp: $(BUILDDIR)/nanokvm-pro-prepare-stamp $(BUIL
 
 $(BUILDDIR)/nanokvm-pro-package-prepare-stamp: $(BUILDDIR)/nanokvm-pro-prepare-stamp $(BUILDDIR)/nanokvm-pro-debs-stamp
 	@cd $(BUILDDIR)/nanokvm-pro ; dpkg-deb -R nanokvm_pro_$(NANOKVM_PRO_VERSION)/nanokvmpro_$(NANOKVM_PRO_VERSION)_$(DEB_ARCH).deb $(NANOKVM_PRO_PACKAGE_DIR)
-	@apt-get install -y golang-go npm
+	@apt-get install -y golang-go # npm
 	@cd $(BUILDDIR)/nanokvm-pro && git clone $(NANOKVM_PRO_GIT_URL)
 	@cd $(NANOKVM_PRO_BUILD_DIR) && git checkout $(NANOKVM_PRO_GIT_REF)
 	@cd $(NANOKVM_PRO_BUILD_DIR)/$(NANOKVM_PRO_GOMOD) && git clone --depth 1 $(NANOKVM_PRO_GO_VENDOR_URL) vendor
@@ -119,7 +122,7 @@ $(BUILDDIR)/nanokvm-pro-package-prepare-stamp: $(BUILDDIR)/nanokvm-pro-prepare-s
 	else \
 		mkdir -p $(NANOKVM_PRO_XDG_HOME_DIR) && \
 		mv $(NANOKVM_PRO_BUILD_DIR)/web/node_modules/.npm $(NANOKVM_PRO_XDG_HOME_DIR)/ && \
-		$(HOST_NPM) install -g --offline pnpm && \
+		$(HOST_NPM) install -g --offline pnpm@$(NANOKVM_PRO_PNPM_VERSION)+sha1.$(NANOKVM_PRO_PNPM_SHA_SUM) || $(HOST_NPM) install -g pnpm@$(NANOKVM_PRO_PNPM_VERSION)+sha1.$(NANOKVM_PRO_PNPM_SHA_SUM) && \
 		rm -rf  $(NANOKVM_PRO_BUILD_DIR)/web/node_modules/corepack/ ; \
 	fi
 	@$(foreach file, $(wildcard /configs/common/patches/nanokvm-pro/*.patch), cd $(NANOKVM_PRO_BUILD_DIR) && git apply --ignore-whitespace $(file);)
