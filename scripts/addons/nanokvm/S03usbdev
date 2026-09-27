@@ -9,6 +9,8 @@ start_usb_dev(){
     mkdir g0
     cd g0
 
+    echo 0x0200 > bcdUSB
+    echo 0x0510 > bcdDevice
     # echo 0x3346 > idVendor
     # echo 0x1009 > idProduct
     if [ -e /boot/usb.vid ]
