@@ -3,7 +3,6 @@ $(BUILDDIR)/nanokvm-stamp: $(BUILDDIR)/buildroot-package-stamp
 	@$(eval NANOKVMVERSION=$(shell cat $(BR_OUTPUT_DIR)/target/kvmapp/version))
 	@$(eval BV=$(shell cd $(BUILDDIR)/buildroot && git log -1 --format="%at" | xargs -I{} date -d @{} +-%Y%m%d-${KERNELREV}))
 	@find $(BR_OUTPUT_DIR)/target/kvmapp/server -name "*.so*" -type f ! -path "*libgcc_s.so" ! -path "*libtinyalsa.so" ! -path "*libaac*.so" ! -path "*libcvi_audio.so" ! -path "*libcvi_*ssp*.so" ! -path "*libcvi_*vqe*.so" ! -path "*libcvi_RES1.so" ! -path "*libcvi_VoiceEngine.so" ! -path "*libae.so" ! -path "*libaf.so" ! -path "*libawb.so" ! -path "*libisp_algo.so" ! -path "*.py*" -printf 'striping %p\n' -exec $(SDK_CROSS_COMPILE_PATH)/bin/$(SDK_CROSS_COMPILE_PREFIX)strip --strip-all {} \;
-	@find $(BR_OUTPUT_DIR)/target/kvmapp/server -executable -type f ! -name "*.sh" ! -path "*etc*" ! -path "*.ko" ! -path "*.so*" ! -path "*.ini*" ! -path "*.py*" ! -path "*.script*" -printf 'striping %p\n' -exec $(SDK_CROSS_COMPILE_PATH)/bin/$(SDK_CROSS_COMPILE_PREFIX)strip --strip-all {} 2>/dev/null \;
 	@mkdir -p $(BUILDDIR)/package/nanokvm-$(BOARD)-$(NANOKVMVERSION)
 	@cp -r /builder/deb/nanokvm-sg200x/* $(BUILDDIR)/package/nanokvm-$(BOARD)-$(NANOKVMVERSION)/
 	@mkdir -pv $(BUILDDIR)/package/nanokvm-$(BOARD)-$(NANOKVMVERSION)/etc/init.d/
