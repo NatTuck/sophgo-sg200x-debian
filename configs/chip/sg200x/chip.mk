@@ -584,7 +584,7 @@ $(BUILDDIR)/buildroot-prepare-clone-stamp:
 
 $(BUILDDIR)/buildroot-prepare-checkout-stamp: $(BUILDDIR)/buildroot-prepare-clone-stamp
 	@echo "$(COLOUR_GREEN)Checking out Buildroot for $(BOARD)$(END_COLOUR)"
-	@cd $(BR_DIR) && git checkout d2a5ed3
+	@cd $(BR_DIR) && git checkout f71344b
 	@touch $@
 
 $(BUILDDIR)/buildroot-prepare-clone-dl-stamp: $(BUILDDIR)/buildroot-prepare-checkout-stamp
