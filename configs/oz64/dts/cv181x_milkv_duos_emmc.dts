@@ -1,0 +1,175 @@
+/dts-v1/;
+#include "soph_base_riscv.dtsi"
+#include "soph_asic_bga.dtsi"
+#include "soph_asic_emmc.dtsi"
+#include "soph_default_memmap.dtsi"
+
+#include "dt-bindings/leds/common.h"
+
+/ {
+	model = "Pine64 Oz64";
+
+	/delete-node/ wifi_pin;
+	/delete-node/ bt_pin;
+
+	aliases {
+		mmc0 = &emmc;
+		mmc1 = &wifisd;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0 {
+			gpios = <&porta 29 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "activity";
+			function = LED_FUNCTION_HEARTBEAT;
+			label = "blue";
+		};
+		led1 {
+			gpios = <&porte 6 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "netdev";
+			function = LED_FUNCTION_HEARTBEAT;
+			label = "orange";
+		};
+		led2 {
+			gpios = <&porte 8 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "stmmac-0:00:link";
+			function = LED_FUNCTION_HEARTBEAT;
+			label = "green";
+		};
+	};
+};
+
+&mipi_rx {
+	snsr-reset = <&porta 2 GPIO_ACTIVE_LOW>, <&porta 2 GPIO_ACTIVE_LOW>, <&porta 2 GPIO_ACTIVE_LOW>;
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+};
+
+&i2c4 {
+	status = "okay";
+
+	gt9xx: gt9xx@14 {
+		compatible = "goodix,gt9xx";
+		reg = <0x14>;
+		goodix,irq-gpio = <&porta 18 0>;
+		goodix,rst-gpio = <&porta 19 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&spi3 {
+	status = "okay";
+
+	/delete-node/ spidev@0;
+
+	st7789v: st7789v@0 {
+		compatible = "sitronix,st7789x";
+		reg = <0>;
+		spi-max-frequency = <48000000>;
+		spi-cpol;
+		spi-cpha;
+		rotate = <0>;
+		fps = <60>;
+		rgb;
+		buswidth = <8>;
+
+		dc = <&porta 18 GPIO_ACTIVE_HIGH>;
+		reset = <&porta 28 GPIO_ACTIVE_HIGH>;
+
+		debug = <0x0>;
+		status = "okay";
+	};
+};
+
+&dac {
+	/delete-property/ mute-gpio-l;
+	/delete-property/ mute-gpio-r;
+};
+
+/* mipi dsi for u-boot */
+&vo {
+	compatible = "cvitek,vo";
+	reset-gpio = <&porte 2 GPIO_ACTIVE_LOW>;
+	pwm-gpio = <&porte 0 GPIO_ACTIVE_HIGH>;
+	power-ct-gpio = <&porte 1 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+/* mipi dsi for kernel */
+&mipi_tx {
+	compatible = "cvitek,mipi_tx";
+	reset-gpio = <&porte 2 GPIO_ACTIVE_LOW>;
+	pwm-gpio = <&porte 0 GPIO_ACTIVE_HIGH>;
+	power-ct-gpio = <&porte 1 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&wifisd {
+	status = "okay";
+	cap-sd-highspeed;
+	sd-uhs-sdr25;
+	sd-uhs-ddr50;
+	sd-uhs-sdr104;
+	min-frequency = <400000>;
+	max-frequency = <187500000>;
+};
+
+&usb {
+	vbus-gpio = <&portb 6 0>;
+};
+
+&soc_thermal_0 {
+	cooling-maps {
+		map0 {
+			trip = <&soc_thermal_trip_0>;
+			cooling-device = <&cooling THERMAL_NO_LIMIT 1>;
+		};
+		map1 {
+			trip = <&soc_thermal_trip_1>;
+			cooling-device = <&cooling THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&porta {
+	/* Pine64 Oz64: AIC8800DC CHIP_EN / WL_REG_ON is on XGPIOA[30] (AUX0 pad).
+	 * The Duo S maps its WiFi power to PA15; on the Oz64 that pin is SPK_EN,
+	 * so without this hog the AIC8800DC never powers up and SD1 sees no card.
+	 */
+	wifi_chip_en {
+		gpio-hog;
+		gpios = <30 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&uart3 {
+	status = "okay";
+};
+
+&uart4 {
+	status = "okay";
+};

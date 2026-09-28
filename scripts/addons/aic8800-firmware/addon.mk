@@ -19,6 +19,13 @@ $(BUILDDIR)/aic8800-firmware-stamp:
 	@cp -a $(BUILDDIR)/aic8800-sdio-firmware/aic8800/ $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/
 	@mkdir -p $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/aic8800_and_aic8800D80
 	@cp -a $(BUILDDIR)/aic8800-sdio-firmware/aic8800_and_aic8800D80/ $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/
+	@# Oz64 uses an AIC8800DC; the driver's default aic_fw_path is a single dir
+	@# (aic8800_and_aic8800D80), so drop the DC blobs in there too.
+	@mkdir -p $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/aic8800DC
+	@cp -a $(BUILDDIR)/aic8800-sdio-firmware/aic8800DC/ $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/
+	@cp -a $(BUILDDIR)/aic8800-sdio-firmware/aic8800DC/. $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/aic8800_and_aic8800D80/
+	@mkdir -p $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/aic8800D80X2
+	@cp -a $(BUILDDIR)/aic8800-sdio-firmware/aic8800D80X2/ $(AIC8800_PACKAGE_DIR)$(AIC8800_TARGET_DIR)/
 	@sed -i 's/Architecture: riscv64/Architecture: $(DEB_ARCH)/' $(AIC8800_PACKAGE_DIR)/DEBIAN/control
 	@sed -i 's/Version: 1.0.0/Version: $(OSDRVVERSION)-$(AIC8800RELEASE)/' $(AIC8800_PACKAGE_DIR)/DEBIAN/control
 	@sed -i 's/Package: firmware-aic8800-cv181x/Package: firmware-aic8800-$(CHIP)/' $(AIC8800_PACKAGE_DIR)/DEBIAN/control

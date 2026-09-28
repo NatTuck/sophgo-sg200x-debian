@@ -1,0 +1,39 @@
+From: Oz64 WiFi bring-up <noreply@example.com>
+Subject: [PATCH] aic8800: disable BT-over-SDIO and BT/WiFi coexist
+
+The AIC8800DC connected over SDIO on the Pine64 Oz64 (and the vendor
+driver built here) hangs the SDIO bus shortly after the FullMAC interface
+is created.  The failing command is TDLS_SDIO_BT_SEND_CFM (msg id 3089),
+i.e. the BT-over-SDIO send path introduced by CONFIG_SDIO_BT, which runs
+right after btsdio_init().  Once the bus is wedged, aicwf_sdio_hal_irqhandler
+spins on reads returning -110/0xff and the system becomes unusable.
+
+We do not use the SDIO Bluetooth on this board, so disable CONFIG_SDIO_BT
+(and CONFIG_COEX) for both the bsp and fdrv modules.  With these off the
+WiFi comes up, scans, associates and passes traffic.
+--- a/extdrv/wireless/aic8800/aic8800_bsp/Makefile
++++ b/extdrv/wireless/aic8800/aic8800_bsp/Makefile
+@@ -31,6 +31,6 @@
+ CONFIG_RESV_MEM_SUPPORT ?= y
+ CONFIG_AMSDU_RX = y
+ CONFIG_IRQ_FALL ?= n
+-CONFIG_SDIO_BT = y
++CONFIG_SDIO_BT = n
+ CONFIG_RADAR_OR_IR_DETECT =n
+ CONFIG_FOR_IPCAM = n
+--- a/extdrv/wireless/aic8800/aic8800_fdrv/Makefile
++++ b/extdrv/wireless/aic8800/aic8800_fdrv/Makefile
+@@ -72,11 +72,11 @@
+ CONFIG_RADAR_OR_IR_DETECT =n
+ CONFIG_DOWNLOAD_FW =n
+ CONFIG_RFTEST=y
+ CONFIG_USB_BT =n
+-CONFIG_SDIO_BT=y
++CONFIG_SDIO_BT=n
+ CONFIG_USE_5G ?= y
+ CONFIG_CREATE_TRACE_POINTS = n
+ CONFIG_TXRX_THREAD_PRIO = y
+ # CONFIG_COEX = n for BT_ONLY, CONFIG_COEX =y for combo and sw
+-CONFIG_COEX = y
++CONFIG_COEX = n
+ CONFIG_RX_NETIF_RECV_SKB = y

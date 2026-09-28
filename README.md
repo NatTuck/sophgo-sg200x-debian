@@ -1,5 +1,5 @@
 # Debian Images for Sophgo cv181x/sg200x based boards 
-This repository builds debian images for Sophgo cv181x/sg200x based boards such as MilkV Duo256/DuoS and Sipeed LicheeRvNano/NanoKVM.
+This repository builds debian images for Sophgo cv181x/sg200x based boards such as MilkV Duo256/DuoS, Sipeed LicheeRvNano/NanoKVM and the Pine64 Oz64.
 
 (Note, we don't support the MilkV Duo, as it does not have enough ram to run Debian)
 
@@ -224,6 +224,8 @@ Replace the licheervnano with the board you want to build for:
 - duo256
 - duos
 - licheervnano
+- oz64 (Pine64 Oz64; reuses the Duo S u-boot and boots with an Oz64
+  device tree that enables the onboard AIC8800DC WiFi on XGPIOA[30])
 
 If you want to create a image for the DuoS with EMMC, you can add "STORAGE_TYPE=emmc" to the make command:
 ```

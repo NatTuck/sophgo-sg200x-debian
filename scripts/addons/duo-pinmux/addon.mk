@@ -9,6 +9,8 @@ DUO_PINMUX_PACKAGE_DIR = $(BUILDDIR)/package/duo-pinmux-$(BOARD)-$(DUO_PINMUX_VE
 
 ifeq ($(BOARD),duos)
 DUO_PINMUX_CHIP_DIR = duos
+else ifeq ($(BOARD),oz64)
+DUO_PINMUX_CHIP_DIR = duos
 else
 DUO_PINMUX_CHIP_DIR = duo256m
 endif
