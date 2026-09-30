@@ -69,8 +69,8 @@ systemctl enable usb-switch
 
 and reboot afterwards. 
 
-### WiFi on DuoS/LicheeRVNano
-For the LicheeRVNano/DuoS board, WiFi is enabled. To connect to your wifi network, execute the following command (example, use ssid and password of your wifi network):
+### WiFi on DuoS/LicheeRVNano/Oz64
+For the LicheeRVNano/DuoS/Oz64 boards, WiFi is enabled. To connect to your wifi network, execute the following command (example, use ssid and password of your wifi network):
 ```
 touch /boot/wifi.sta
 echo "My WiFi" | tee /boot/wifi.ssid
@@ -95,7 +95,19 @@ The libs and samples are build on a separate package called cvitek-middleware-(b
 The images, by default, allocate minimum amount of memory for the ION heap to use vi/venc, so you get more memory for the OS
 
 ### Ardunio/Freertos Support
-Support is disabled on my images because the small C906 core is used by ISP.
+The SG2000 has a single small C906L core. It can either run the vendor ISP
+(camera/VPSS/VENC/TPU) or a user FreeRTOS/Arduino image via the kernel
+remoteproc driver, but not both. Select one at build time with `SECOND_CPU`
+(see [Build-time Configuration](#build-time-configuration)):
+
+- `SECOND_CPU=camera` (default) uses the C906L for the ISP; Arduino is not available.
+- `SECOND_CPU=arduino` sets `ION_SIZE=0`, so the ISP/vcodec modules are not
+  loaded and the C906L stays free. The kernel already provides
+  `CONFIG_CVITEK_REMOTEPROC`/mailbox, so a firmware can be loaded through
+  `/sys/class/remoteproc/`. Users supply their own Arduino/FreeRTOS binary.
+
+Because the choice changes the memory map, the two personalities are separate
+full image builds.
 
 ### LCD Panel Support
 If you have a DSI LCD panel connected you can install the matching bootloader.
@@ -238,6 +250,53 @@ podman run --privileged -it --rm -v ./configs/:/configs -v ./image:/output ghcr.
 ```
 
 The Docker image will build the image and place it in the image directory
+
+### Build-time Configuration
+The `oz64` target accepts a few optional make variables. They are written to
+the FAT boot partition and read by the on-device init scripts, so they persist
+across reboots without modifying the rootfs.
+
+| Variable | Values | Effect |
+| --- | --- | --- |
+| `IMAGE_HOSTNAME` | e.g. `oz64-nat` | Sets the hostname exactly (`/boot/hostname`). |
+| `IMAGE_HOSTNAME_PREFIX` | e.g. `oz64` | Sets the `<prefix>-<hash>` hostname prefix (`/boot/hostname.prefix`). |
+| `WIFI_MODE` | `none`, `sta`, `ap` | WiFi mode at boot (default `none`). |
+| `WIFI_SSID` / `WIFI_PASS` | strings | Credentials for `sta` mode. Leave `WIFI_PASS` empty for an **open** network (the interface is configured with `wpa-key-mgmt NONE`). |
+| `WIFI_IPV4_PREFIX` | e.g. `10.42.0` | AP subnet prefix (`ap` mode only). |
+| `WIFI_WPA_CONF` | path | `wpa_supplicant.conf` to bake in; implies `sta` and wires `wpa-conf` for you. Relative paths resolve under `/configs`. |
+| `SECOND_CPU` | `camera`, `arduino` | Selects the C906L personality (default `arduino` on `oz64`); see [Ardunio/Freertos Support](#arduniofreertos-support). |
+
+When `IMAGE_HOSTNAME` is set, the two network interfaces advertise **distinct
+DHCP/DNS names** so IPv4 and IPv6 stay unambiguous: ethernet keeps `<name>` and
+WiFi uses `<name>-wifi` (e.g. `oz64-nat` and `oz64-nat-wifi`). IPv6 addresses
+are made **deterministic** (`slaac hwaddr` + `duid ll`, derived from the
+device-key MACs), so they stay stable across reboots/reflashes and the router's
+DNS does not accumulate stale records. The mDNS name `<name>.local` is
+unchanged.
+
+Example - an Oz64 image that joins `cs4250` and is reachable as `oz64-nat`:
+```
+podman run --privileged -it --rm -v ./configs/:/configs -v ./image:/output ghcr.io/scpcom/sophgo-sg200x-debian:debian make BOARD=oz64 SECOND_CPU=arduino IMAGE_HOSTNAME=oz64-nat WIFI_MODE=sta WIFI_SSID=cs4250 WIFI_PASS=ultrasecure image
+```
+
+Open network (no `WIFI_PASS`):
+```
+make BOARD=oz64 WIFI_MODE=sta WIFI_SSID=domenet image
+```
+
+Access-point mode:
+```
+make BOARD=oz64 WIFI_MODE=ap WIFI_SSID=oz64 WIFI_PASS=oz64oz64 WIFI_IPV4_PREFIX=10.42.0 image
+```
+
+Bake in a full `wpa_supplicant.conf` (place it under `configs/oz64/`); this is
+also the escape hatch for WPA3/enterprise or multiple networks:
+```
+make BOARD=oz64 WIFI_WPA_CONF=oz64/wpa_supplicant.conf image
+```
+
+WiFi credentials are stored in cleartext on the boot partition. As the values
+pass through `make`, a literal `$` in a password must be written as `$$`.
 
 addition make targets are available when building:
 - image - builds the image

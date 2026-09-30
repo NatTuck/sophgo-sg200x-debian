@@ -45,6 +45,9 @@ start() {
 		if [ -e /boot/wpa_supplicant.conf ]
 		then
 			cp /boot/wpa_supplicant.conf /etc/wpa_supplicant.conf
+			echo "allow-hotplug wlan0" > /etc/network/interfaces.d/wlan0
+			echo "iface wlan0 inet dhcp" >> /etc/network/interfaces.d/wlan0
+			printf '\twpa-conf /etc/wpa_supplicant.conf\n' >> /etc/network/interfaces.d/wlan0
 		else
 			ssid=""
 			pass=""
@@ -60,13 +63,19 @@ start() {
 				cat /boot/wifi.pass
 				pass=`cat /boot/wifi.pass`
 			fi
-			if [ ! -z "${ssid}${pass}" ]
+			if [ ! -z "${ssid}" ]
 			then
 				echo "allow-hotplug wlan0" > /etc/network/interfaces.d/wlan0
 				echo "iface wlan0 inet dhcp" >> /etc/network/interfaces.d/wlan0
-				echo -e "\twpa-essid $ssid" >> /etc/network/interfaces.d/wlan0
-				echo -e "\twpa-psk $pass" >> /etc/network/interfaces.d/wlan0
-				echo -e "\twpa-scan-ssid 1" >> /etc/network/interfaces.d/wlan0
+				printf '\twpa-essid %s\n' "$ssid" >> /etc/network/interfaces.d/wlan0
+				if [ -z "${pass}" ]
+				then
+					# Open network: no passphrase, no WPA
+					printf '\twpa-key-mgmt NONE\n' >> /etc/network/interfaces.d/wlan0
+				else
+					printf '\twpa-psk %s\n' "$pass" >> /etc/network/interfaces.d/wlan0
+				fi
+				printf '\twpa-scan-ssid 1\n' >> /etc/network/interfaces.d/wlan0
 			fi
 		fi
 	elif [ -e /boot/wifi.ap ]
@@ -129,8 +138,8 @@ start() {
 		#udhcpd -S /etc/udhcpd.wlan0.conf
 		echo "allow-hotplug wlan0" > /etc/network/interfaces.d/wlan0
 		echo "iface wlan0 inet static" >> /etc/network/interfaces.d/wlan0
-		echo -e "\taddress $ipv4_prefix.1" >> /etc/network/interfaces.d/wlan0
-		echo -e "\tnetmask 255.255.255.0" >> /etc/network/interfaces.d/wlan0
+		printf '\taddress %s\n' "$ipv4_prefix.1" >> /etc/network/interfaces.d/wlan0
+		printf '\tnetmask 255.255.255.0\n' >> /etc/network/interfaces.d/wlan0
 		systemctl enable wifi-hostapd-wlan0.service
 		systemctl enable wifi-builtin-wlan0.service
 	elif [ -e /boot/wifi.mon ]

@@ -3,7 +3,7 @@ Description=Start WiFi
 After=load-systemko.service
 After=device-key.service
 After=load-wifimod.service
-Before=ifup@wifi0.service
+Before=ifup@wlan0.service
 Before=networking.service wpa_supplicant.service network.target
 StartLimitIntervalSec=0
 
