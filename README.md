@@ -97,17 +97,23 @@ The images, by default, allocate minimum amount of memory for the ION heap to us
 ### Ardunio/Freertos Support
 The SG2000 has a single small C906L core. It can either run the vendor ISP
 (camera/VPSS/VENC/TPU) or a user FreeRTOS/Arduino image via the kernel
-remoteproc driver, but not both. Select one at build time with `SECOND_CPU`
+remoteproc driver, **but not both** — the two occupy the same core and the same
+`fast_image`/`CVIMMAP_FREERTOS_*` memory window, so there is no single image that
+can do either at runtime. Select one personality at build time with `SECOND_CPU`
 (see [Build-time Configuration](#build-time-configuration)):
 
-- `SECOND_CPU=camera` (default) uses the C906L for the ISP; Arduino is not available.
+- `SECOND_CPU=camera` uses the C906L for the ISP. This is the default on
+  `duos`/`duo256`/`lichee*`; Arduino is not available there.
 - `SECOND_CPU=arduino` sets `ION_SIZE=0`, so the ISP/vcodec modules are not
-  loaded and the C906L stays free. The kernel already provides
-  `CONFIG_CVITEK_REMOTEPROC`/mailbox, so a firmware can be loaded through
-  `/sys/class/remoteproc/`. Users supply their own Arduino/FreeRTOS binary.
+  loaded and the C906L is left free. It adds the `mbox`/`cv181x-c906_1` nodes to
+  the kernel DTB (via `configs/common/dts/cv181x/arduino-rproc.dtsi`), so the
+  kernel binds `cvitek_mailbox` + `cvitek_remoteproc` and exposes
+  `/sys/class/remoteproc/remoteproc0`. This is the default on `oz64`.
 
 Because the choice changes the memory map, the two personalities are separate
-full image builds.
+full image builds. The remoteproc is **not auto-started**: users supply their
+own Arduino/FreeRTOS ELF (e.g. into `/lib/firmware/`) and start it manually with
+`echo start > /sys/class/remoteproc/remoteproc0/state` (or add a unit).
 
 ### LCD Panel Support
 If you have a DSI LCD panel connected you can install the matching bootloader.
@@ -251,6 +257,49 @@ podman run --privileged -it --rm -v ./configs/:/configs -v ./image:/output ghcr.
 
 The Docker image will build the image and place it in the image directory
 
+### Faster, cached builds
+The `docker run --rm` above throws the whole build tree away after every run,
+so the kernel/osdrv/middleware/buildroot are re-cloned and re-compiled, the
+rootfs is rebuilt and ~1 GB of cross-toolchains are re-downloaded. The
+`build.sh` wrapper keeps that state in named volumes instead:
+
+```
+./build.sh BOARD=oz64 SECOND_CPU=arduino IMAGE_HOSTNAME=oz64-toad image
+```
+
+It is a thin wrapper around the same `builder` image and passes every argument
+through to `make`. The cache volumes are:
+
+| volume | mount | scope |
+| --- | --- | --- |
+| `sg200x-build-<board>-<variant>-<storage>-<second_cpu>-<arch>-<gitref>` | `/build` | per configuration |
+| `sg200x-rootfs-<...>` | `/rootfs` | per configuration |
+| `sg200x-host-tools` | `/host-tools` | shared (cross toolchains, plus a tarball cache in `/host-tools/dl`) |
+| `sg200x-apt` | `/var/cache/apt` | shared |
+
+Extra commands:
+
+```
+./build.sh --clean BOARD=oz64 image   # drop this config's build/rootfs (full rebuild)
+./build.sh --purge BOARD=oz64 image   # also drop the shared toolchains + apt cache
+./build.sh BOARD=oz64 image-clean     # redo just the rootfs/image assembly
+./build.sh BOARD=oz64 linux-clean     # drop the kernel tree, then rebuild `image`
+```
+
+The make stamps do not track `IMAGE_HOSTNAME`/`WIFI_*` either, so `build.sh`
+fingerprints the make variables and, for `image` builds, automatically prepends
+`image-clean` when they change. That way each run bakes the configuration you
+asked for (`oz64-nat` + `domenet`, or `oz64-toad` + `cs4250`) while still
+reusing the compiled kernel/osdrv/middleware/buildroot. Force it with
+`--refresh`, or disable it with `--no-refresh`.
+
+Note: the make stamps do **not** track the contents of `configs/`, only their
+prerequisites, so after editing a patch/DTS/addon you must drop the affected
+stage (`image-clean`, `linux-clean`, `osdrv-clean`, `buildroot-clean`, ...) or
+use `--clean`. Editing a Kconfig/defconfig or a kernel patch requires
+`linux-clean`; adding/altering an addon requires `image-clean`. The cache
+mainly avoids redoing the stages you did not touch.
+
 ### Build-time Configuration
 The `oz64` target accepts a few optional make variables. They are written to
 the FAT boot partition and read by the on-device init scripts, so they persist
@@ -264,7 +313,7 @@ across reboots without modifying the rootfs.
 | `WIFI_SSID` / `WIFI_PASS` | strings | Credentials for `sta` mode. Leave `WIFI_PASS` empty for an **open** network (the interface is configured with `wpa-key-mgmt NONE`). |
 | `WIFI_IPV4_PREFIX` | e.g. `10.42.0` | AP subnet prefix (`ap` mode only). |
 | `WIFI_WPA_CONF` | path | `wpa_supplicant.conf` to bake in; implies `sta` and wires `wpa-conf` for you. Relative paths resolve under `/configs`. |
-| `SECOND_CPU` | `camera`, `arduino` | Selects the C906L personality (default `arduino` on `oz64`); see [Ardunio/Freertos Support](#arduniofreertos-support). |
+| `SECOND_CPU` | `camera`, `arduino` | Selects the C906L personality (`camera` default on `duos`, `arduino` default on `oz64`); see [Ardunio/Freertos Support](#arduniofreertos-support). |
 
 When `IMAGE_HOSTNAME` is set, the two network interfaces advertise **distinct
 DHCP/DNS names** so IPv4 and IPv6 stay unambiguous: ethernet keeps `<name>` and

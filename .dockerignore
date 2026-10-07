@@ -1,0 +1,12 @@
+# Keep the docker build context small. The builder image only ADDs scripts/,
+# but the daemon still receives the context, so exclude the large build
+# artifacts (output images/debs) and VCS metadata.
+.git
+.github
+image/
+notes/
+*.img
+*.img.lz4
+*.lz4
+*.zip
+build-demo*.sh

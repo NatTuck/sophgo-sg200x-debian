@@ -24,15 +24,24 @@ gctgts="riscv64-linux
 riscv64-linux-musl
 riscv64-elf"
 
+# Persistent cache so a fresh /host-tools (e.g. a new build config, or CI with a
+# cached /host-tools volume) does not re-download ~1 GB of toolchains.
+tcache=/host-tools/dl
+
 tcset=riscv64-gcc-thead_${tcdat}-${gcver}-${harch}
 [ "X${tcurl}" = "X" ] && tcurl=https://github.com/scpcom/riscv-gnu-toolchain/releases/download/${tcset}
 
 cd $d
 for gctgt in $gctgts ; do
   gctar=${gctgt}-gcc-thead_${tcdat}-${gcver}-${harch}.tar.gz
+  if [ ! -e ${gctar} ] && [ -e ${tcache}/${gctar} ]; then
+    cp -p ${tcache}/${gctar} ${gctar}
+  fi
   if [ ! -e ${gctar} ]; then
     wget -N ${tcurl}/${gctar}
   fi
+  mkdir -p ${tcache}
+  [ -e ${tcache}/${gctar} ] || cp -p ${gctar} ${tcache}/ 2>/dev/null || true
   if [ -e ${tcset}.sha256 ]; then
     gcsum=`sha256sum ${gctar} | cut -d ' ' -f 1`
     if [ "X${gcsum}" = "X" ] ; then

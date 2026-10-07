@@ -1,0 +1,74 @@
+/*
+ * C906L remoteproc nodes for the SECOND_CPU=arduino personality.
+ *
+ * Included by copy_dts_action (configs/chip/sg200x/chip.mk) only when
+ * SECOND_CPU=arduino, for the boards that have a cv181x_milkv_duos_{sd,emmc}.dts.
+ *
+ * The board DTS keeps the vendor soph_default_memmap.dtsi. In that file
+ * fast_image is a root node (not a child of /reserved-memory), but
+ * cvitek_remoteproc resolves "memory-region" through of_reserved_mem_lookup(),
+ * so this fragment declares its own carveout + vdev buffers under
+ * /reserved-memory instead of reusing fast_image.
+ *
+ * Guarded with __UBOOT__: the same board DTS is compiled for u-boot, whose
+ * dtc cpp flags define __UBOOT__ and whose include/dt-bindings has no
+ * cvitek-mailbox.h. This makes the fragment expand to nothing for u-boot, so
+ * the u-boot/OpenSBI artifact is byte-identical to the camera personality.
+ */
+#ifndef __UBOOT__
+#include <dt-bindings/mailbox/cvitek-mailbox.h>
+
+/ {
+	reserved-memory {
+		rproc_mem: rproc@9fe00000 {
+			reg = <0x0 CVIMMAP_FREERTOS_ADDR 0x0 CVIMMAP_FREERTOS_SIZE>;
+			no-map;
+		};
+
+		vdev0vring0: vdev0vring0 {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x8f528000 0 0x4000>;
+			size = <0x0 0x4000>;
+			no-map;
+		};
+
+		vdev0vring1: vdev0vring1 {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x8f52C000 0 0x4000>;
+			size = <0x0 0x4000>;
+			no-map;
+		};
+
+		vdev0buffer: vdev0buffer {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x8f530000 0 0x100000>;
+			size = <0x0 0x100000>;
+			no-map;
+		};
+	};
+
+	mbox: mbox@0x01900000 {
+		compatible = "cvitek,sg200x-mailbox";
+		reg = <0x0 0x01900000 0x0 0x1000>;
+		reg-names = "mailbox";
+		interrupts = <101 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-parent = <&plic0>;
+		status = "okay";
+		#mbox-cells = <4>;
+	};
+
+	cv181x-c906_1 {
+		compatible = "cvitek,cv181x-c906_1";
+		memory-region = <&rproc_mem &vdev0vring0 &vdev0vring1 &vdev0buffer>;
+		firmware = "c906-mcu.elf";
+		resets = <&rst RST_C906_1>;
+		reset-names = "sw_reset";
+		clocks = <&clk CV181X_CLK_C906_1>;
+		clock-names = "clk_c906_1";
+		mboxes = <&mbox 0 CVITEK_MBOX_DIRECTION_TX CVITEK_MBOX_C906_1 1>,
+		         <&mbox 1 CVITEK_MBOX_DIRECTION_RX CVITEK_MBOX_C906_1 1>;
+		mbox-names = "vq_tx", "vq_rx";
+		status = "okay";
+	};
+};
+#endif

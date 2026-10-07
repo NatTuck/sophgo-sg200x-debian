@@ -237,6 +237,21 @@ define copy_dts_action
 	@$(foreach file, $(wildcard /configs/common/dts/$(CHIP)_$(UBOOT_ARCH)/*), cp $(file) ${1}/;)
 	@$(foreach file, $(wildcard /configs/$(BOARD_CFG)/dts/*), cp $(file) ${1}/;)
 	@$(foreach file, $(wildcard /configs/$(BOARD_CFG)/dts/*.dts), $(call update_dts_action,${1}/$(notdir $(file)));)
+# SECOND_CPU=arduino: pull in the C906L remoteproc nodes. The fragment is
+# __UBOOT__-guarded, so this also runs for the u-boot tree but expands to
+# nothing there and leaves u-boot.dtb identical to the camera personality.
+	@if [ "$(SECOND_CPU)" = "arduino" ]; then \
+		n=0; \
+		for f in ${1}/cv181x_milkv_duos_sd.dts ${1}/cv181x_milkv_duos_emmc.dts; do \
+			[ -e "$$f" ] || continue; \
+			grep -q 'soph_default_memmap.dtsi' "$$f" || { \
+				echo "ERROR: expected soph_default_memmap.dtsi include missing in $$f" >&2; exit 1; }; \
+			n=1; \
+			grep -q 'arduino-rproc.dtsi' "$$f" && continue; \
+			sed -i 's|#include "soph_default_memmap.dtsi"|#include "soph_default_memmap.dtsi"\n#include "arduino-rproc.dtsi"|' "$$f"; \
+		done; \
+		[ $$n -eq 1 ] || { echo "ERROR: no board DTS patched for SECOND_CPU=arduino" >&2; exit 1; }; \
+	fi
 endef
 
 define copy_header_action
@@ -270,6 +285,7 @@ $(BUILDDIR)/$(BOARD)-$(VARIANT)/cvi_board_memmap.h: $(BUILDDIR)/$(BOARD)-$(VARIA
 	@python3 /builder/python/mmap_conv.py --type h $(BUILDDIR)/$(BOARD)-$(VARIANT)/memmap.py $@
 
 $(BUILDDIR)/toolchain-prepare-patch-stamp:
+	@mkdir -p $(BUILDDIR)
 	@echo "$(COLOUR_GREEN)Patching Toolchain for $(BOARD)$(END_COLOUR)"
 	@[ "$(TOOLCHAIN_URL)" = "X" ] || sed -i 's|^tcurl=.*|tcurl=$(TOOLCHAIN_URL)|g' /builder/replace-all-arm-toolchains.sh
 	@[ "$(TOOLCHAIN_URL)" = "X" ] || sed -i 's|^tcurl=.*|tcurl=$(TOOLCHAIN_URL)|g' /builder/replace-all-thead-toolchains.sh
@@ -359,6 +375,17 @@ $(BUILDDIR)/linux-package-stamp: $(BUILDDIR)/linux-compile-stamp
 	@touch $@
 
 linux: $(BUILDDIR)/linux-package-stamp
+
+# Build only the device trees (no kernel compile). Handy for validating a DTS
+# change on a running board by swapping the .dtb under /boot/fdt/.
+.PHONY: dtbs
+dtbs: $(BUILDDIR)/linux-prepare-configure-stamp
+	@echo "$(COLOUR_GREEN)Building device trees for $(BOARD)$(END_COLOUR)"
+	@cd $(BUILDDIR)/kernel && $(MAKE) -j$(NPROCS) O=$(KERNEL_OUTPUT_DIR)/ $(KERNEL_MAKE_OPTS) dtbs
+	@for b in cv181x_milkv_duos_sd cv181x_milkv_duos_emmc; do \
+		src=$(KERNEL_OUTPUT_DIR)/arch/$(KERNEL_ARCH)/boot/dts/$(CHIP_VENDOR)/$$b.dtb; \
+		[ -e "$$src" ] && cp "$$src" /output/; \
+	done
 
 linux-clean:
 	@rm -rf $(BUILDDIR)/kernel
@@ -884,7 +911,7 @@ fsbl-clean:
 $(BUILDDIR)/image-prepare-stamp: 
 	@echo "$(COLOUR_GREEN)Preparing Image for $(BOARD)$(END_COLOUR)"
 	@-mkdir $(BUILDDIR)
-	@rm -rf /rootfs/
+	@if mountpoint -q /rootfs; then find /rootfs -mindepth 1 -maxdepth 1 -exec rm -rf {} + ; else rm -rf /rootfs ; fi
 	@-rm $(addon-targets)
 	@mkdir -p /rootfs/
 	@[ "X$(DEB_PUBKEY)" = "X" ] || gpg --recv-key --keyserver $(DEB_KEYSERVER) $(DEB_PUBKEY) || true
@@ -1078,8 +1105,9 @@ $(BUILDDIR)/image-compile-stamp: $(BUILDDIR)/image-customize-stamp $(BUILDDIR)/i
 image: $(BUILDDIR)/image-compile-stamp
 
 image-clean:
-	@rm -rf /rootfs/
+	@if mountpoint -q /rootfs; then find /rootfs -mindepth 1 -maxdepth 1 -exec rm -rf {} + ; else rm -rf /rootfs ; fi
 	@rm -f $(BUILDDIR)/image-*-stamp $(addon-targets)
+	@rm -f $(BUILDDIR)/image-libs-* $(BUILDDIR)/image-dev-*
 	@rm -f /output/$(BOARD)_$(STORAGE_TYPE).img
 
 image-clean-customize:

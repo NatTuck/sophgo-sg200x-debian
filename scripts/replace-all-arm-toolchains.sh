@@ -18,19 +18,31 @@ aarch64-none-elf"
 
 tcset=arm-gnu-toolchain-${gcver}-${harch}
 
+# Persistent cache so a fresh /host-tools does not re-download the toolchains.
+tcache=/host-tools/dl
+
 cd $d
 for gctgt in $gctgts ; do
   gctar=arm-gnu-toolchain-${gcver}-${harch}-${gctgt}.tar.xz
   srtar=none
+  if [ ! -e ${gctar} ] && [ -e ${tcache}/${gctar} ]; then
+    cp -p ${tcache}/${gctar} ${gctar}
+  fi
   if [ ! -e ${gctar} ]; then
     wget -N ${tcurl}/${tcver}/binrel/${gctar}
   fi
+  mkdir -p ${tcache}
+  [ -e ${tcache}/${gctar} ] || cp -p ${gctar} ${tcache}/ 2>/dev/null || true
   #rttar=runtime-arm-gnu-toolchain-${gcver}-${gctgt}.tar.xz
   if echo ${gctgt} | grep -q linux ; then
     srtar=sysroot-glibc-arm-${lcver}-${tcdat}-${gctgt}.tar.xz
+    if [ ! -e ${srtar} ] && [ -e ${tcache}/${srtar} ]; then
+      cp -p ${tcache}/${srtar} ${srtar}
+    fi
     if [ ! -e ${srtar} ]; then
       wget -N ${tcurl}/${tcver}/binrel/${srtar} || true
     fi
+    [ -e ${tcache}/${srtar} ] || cp -p ${srtar} ${tcache}/ 2>/dev/null || true
   fi
   if [ -e ${tcset}.sha256 ]; then
     gcsum=`sha256sum ${gctar} | cut -d ' ' -f 1`
