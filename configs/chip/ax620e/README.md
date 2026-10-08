@@ -55,7 +55,7 @@ For the MaixCAM2/NanoKVM-Pro board, WiFi is enabled. To connect to your wifi net
 ```
 touch /boot/wifi.sta
 echo "My WiFi" | tee /boot/wifi.ssid
-echo "Pa$$w0rd" /boot/wifi.pass
+printf '%s\n' 'Pa$$w0rd' | tee /boot/wifi.pass
 ```
 
 ### Ethernet

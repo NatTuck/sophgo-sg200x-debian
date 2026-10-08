@@ -45,15 +45,15 @@ Running Arduino sketches on the second core requires an image built with `SECOND
 
 First, download and install [Arduino CLI](https://docs.arduino.cc/arduino-cli/installation/) for your system.
 - On macOS, you can use brew:
-```
-brew update
-brew install arduino-cli
-```
+    ```
+    brew update
+    brew install arduino-cli
+    ```
 - On Linux, it's easiest to install it using their installer:
-```
-curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-```
-This will install to `$PWD/bin`. Make sure the installation directory is in your environment's PATH.
+    ```
+    curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+    ```
+    This will install to `$PWD/bin`. Make sure the installation directory is in your environment's PATH.
 
 Then install the (forked) `sophgo-arduino` core, which includes support for the following boards:
 
@@ -62,8 +62,10 @@ Then install the (forked) `sophgo-arduino` core, which includes support for the 
 - MilkV DuoS
 - PINE64 Oz64
 
+Note: this repository can only build `SECOND_CPU=arduino` images for `duos` and `oz64`; the MilkV Duo is not supported here at all and `duo256` is untested (see `notes/fix-arduino.md`). The list above is the set of boards the Arduino core itself supports.
+
 ```
-arduino-cli config add board_manager.additional_urls https://github.com/granimated/sophgo-arduino/releases/download/v0.2.7/package_sg200x_index.json
+arduino-cli config add board_manager.additional_urls https://github.com/NatTuck/sophgo-arduino/releases/download/v0.2.7-a/package_sg200x_index.json
 arduino-cli core update-index
 arduino-cli core install sophgo:SG200X
 ```
@@ -73,7 +75,7 @@ You can verify that you have support for your board with:
 arduino-cli board listall
 ```
 
-> *If the PINE64 Oz64 isn't listed, you likely have a stale board manager URL in your config. The above is a fork that specifically adds support.*
+> *If the PINE64 Oz64 isn't listed, you likely have a stale board manager URL in your config. The above is a fork that specifically adds support. Remove the old URL with `arduino-cli config remove board_manager.additional_urls <old-url>` (see `arduino-cli config get board_manager.additional_urls`), then re-run `core update-index`.*
 
 Then, compile the sketch for your platform. E.g., use `duos` for the MilkV DuoS or `oz64` for the PINE64 Oz64.
 
@@ -102,9 +104,9 @@ ls Blink1/build
 # Blink1.ino.elf  Blink1.ino.map  compile_commands.json  includes.cache  libraries.cache
 ```
 
-Warnings about `_getpid_r` and `_kill` are expected, but compilation must complete successfully before you upload the `.elf`.
+On some boards the linker prints `_getpid`/`_kill` "not implemented and will always fail" warnings (e.g. `duos`); they are harmless. Compilation must exit 0, otherwise you may upload a stale ELF by accident.
 
-Compilation must complete successfully, otherwise you may upload a stale ELF on accident. After you have your firmware `.elf`, copy it onto the board and start it. Example with SSH:
+After you have your firmware `.elf`, copy it onto the board and start it. Example with SSH:
 
 ```
 # on host, replace oz64 with your board hostname/IP
@@ -113,9 +115,13 @@ ssh debian@oz64
 
 # on dev board
 sudo cp /tmp/blink.elf /lib/firmware/blink.elf
+# load the remoteproc driver if it isn't loaded already
+sudo modprobe cvitek_remoteproc
 echo blink.elf | sudo tee /sys/class/remoteproc/remoteproc0/firmware
 echo start | sudo tee /sys/class/remoteproc/remoteproc0/state
 ```
+
+Before starting, check `cat /sys/class/remoteproc/remoteproc0/state`; if it already says `running`, stop the current firmware first with `echo stop | sudo tee /sys/class/remoteproc/remoteproc0/state`.
 
 If you get a `No such file or directory` error, your elf was probably not copied into `/lib/firmware`.
 
