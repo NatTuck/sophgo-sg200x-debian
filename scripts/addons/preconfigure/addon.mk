@@ -19,16 +19,18 @@ $(BUILDDIR)/preconfigure-stamp:
 		printf '%s\n' '$(IMAGE_HOSTNAME_PREFIX)' > /rootfs/boot/hostname.prefix ; \
 		echo "  hostname prefix: $(IMAGE_HOSTNAME_PREFIX)" ; \
 	fi
-	@if [ -n "$(IMAGE_HOSTNAME)" ] && [ -f /rootfs/etc/dhcpcd.conf ]; then \
+	@if [ -n "$(IMAGE_HOSTNAME)$(IMAGE_HOSTNAME_PREFIX)" ] && [ -f /rootfs/etc/dhcpcd.conf ]; then \
 		conf=/rootfs/etc/dhcpcd.conf ; \
 		sed -i -E 's/^slaac[[:space:]]+private.*/slaac hwaddr/' $$conf ; \
 		sed -i -E 's/^duid[[:space:]]*$$/duid ll/' $$conf ; \
 		grep -qE '^slaac[[:space:]]+hwaddr' $$conf || printf 'slaac hwaddr\n' >> $$conf ; \
 		grep -qE '^duid[[:space:]]+ll' $$conf || printf 'duid ll\n' >> $$conf ; \
 		grep -q '^nohook hostname' $$conf || printf 'nohook hostname\n' >> $$conf ; \
-		printf '\n# %s: WiFi advertises its own DHCP hostname; ethernet keeps the base name\ninterface wlan0\n\thostname %s-wifi\n' "$(BOARD)" "$(IMAGE_HOSTNAME)" >> $$conf ; \
-		echo "  wifi DHCP hostname: $(IMAGE_HOSTNAME)-wifi" ; \
 		echo "  deterministic IPv6: slaac hwaddr + duid ll" ; \
+	fi
+	@if [ -n "$(IMAGE_HOSTNAME)" ] && [ -f /rootfs/etc/dhcpcd.conf ]; then \
+		printf '\n# %s: WiFi advertises its own DHCP hostname; ethernet keeps the base name\ninterface wlan0\n\thostname %s-wifi\n' "$(BOARD)" "$(IMAGE_HOSTNAME)" >> /rootfs/etc/dhcpcd.conf ; \
+		echo "  wifi DHCP hostname: $(IMAGE_HOSTNAME)-wifi" ; \
 	fi
 	@case "$(WIFI_MODE)" in \
 		none|"") : ;; \
