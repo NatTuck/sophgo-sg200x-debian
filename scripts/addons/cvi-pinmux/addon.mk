@@ -34,7 +34,7 @@ $(BUILDDIR)/cvi-pinmux-stamp: $(BUILDDIR)/cvi-pinmux-compile-stamp
 	@cp -r /builder/deb/cvi-pinmux-cv181x/* $(CVI_PINMUX_PACKAGE_DIR)/
 	@mkdir -pv $(CVI_PINMUX_PACKAGE_DIR)/usr/bin/
 	$(INSTALL) -D -m 0755 $(CVI_PINMUX_BUILD_DIR)/cvi-pinmux $(CVI_PINMUX_PACKAGE_DIR)/usr/bin/
-	@ln -s cvi-pinmux $(CVI_PINMUX_PACKAGE_DIR)/usr/bin/cvi_pinmux
+	@ln -sf cvi-pinmux $(CVI_PINMUX_PACKAGE_DIR)/usr/bin/cvi_pinmux
 	@sed -i 's/Architecture: riscv64/Architecture: $(DEB_ARCH)/' $(CVI_PINMUX_PACKAGE_DIR)/DEBIAN/control
 	@sed -i 's/Version: 1.0.0-1/Version: $(CVI_PINMUX_VERSION)$(CPV)/' $(CVI_PINMUX_PACKAGE_DIR)/DEBIAN/control
 	@sed -i 's/Package: cvi-pinmux-cv181x/Package: cvi-pinmux-cv181x/' $(CVI_PINMUX_PACKAGE_DIR)/DEBIAN/control

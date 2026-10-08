@@ -5,6 +5,7 @@ After=device-key.service
 After=usb-device.service
 Before=kvm-hwd.service
 Before=ifup@end0.service
+Before=ifup@wlan0.service
 Before=network.target
 StartLimitIntervalSec=0
 

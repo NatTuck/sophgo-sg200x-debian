@@ -406,9 +406,11 @@ across reboots without modifying the rootfs.
 | `WIFI_WPA_CONF` | path | `wpa_supplicant.conf` to bake in; implies `sta` and wires `wpa-conf` for you. Relative paths resolve under `/configs`. |
 | `SECOND_CPU` | `camera`, `arduino` | Selects the C906L personality (`camera` default on `duos`, `arduino` default on `oz64`); see [Ardunio/Freertos Support](#arduniofreertos-support). |
 
-When `IMAGE_HOSTNAME` is set, the two network interfaces advertise **distinct
-DHCP/DNS names** so IPv4 and IPv6 stay unambiguous: ethernet keeps `<name>` and
-WiFi uses `<name>-wifi` (e.g. `oz64-nat` and `oz64-nat-wifi`). IPv6 addresses
+When `IMAGE_HOSTNAME` (an exact name) or `IMAGE_HOSTNAME_PREFIX` (a per-device
+`<prefix>-<hash>` name, resolved at first boot) is set, the two network
+interfaces advertise **distinct DHCP/DNS names** so IPv4 and IPv6 stay
+unambiguous: ethernet keeps `<name>` and WiFi uses `<name>-wifi` (e.g. `oz64-nat`
+and `oz64-nat-wifi`, or with a prefix `oz64-a4b7` and `oz64-a4b7-wifi`). IPv6 addresses
 are made **deterministic** (`slaac hwaddr` + `duid ll`, derived from the
 device-key MACs), so they stay stable across reboots/reflashes and the router's
 DNS does not accumulate stale records. The mDNS name `<name>.local` is
