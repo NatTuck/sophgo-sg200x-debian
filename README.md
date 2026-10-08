@@ -104,9 +104,13 @@ ls Blink1/build
 # Blink1.ino.elf  Blink1.ino.map  compile_commands.json  includes.cache  libraries.cache
 ```
 
+The example uses `LED_PIN 7`, which is not the built-in-LED constant (`LED_BUILTIN`); set it to the pin your LED is actually on.
+
 On some boards the linker prints `_getpid`/`_kill` "not implemented and will always fail" warnings (e.g. `duos`); they are harmless. Compilation must exit 0, otherwise you may upload a stale ELF by accident.
 
-After you have your firmware `.elf`, copy it onto the board and start it. Example with SSH:
+After you have your firmware `.elf`, copy it onto the board and start it. The remote must be `offline` before you select a new firmware: if `cat /sys/class/remoteproc/remoteproc0/state` already says `running`, stop it first with `echo stop | sudo tee /sys/class/remoteproc/remoteproc0/state`.
+
+Example with SSH:
 
 ```
 # on host, replace oz64 with your board hostname/IP
@@ -120,8 +124,6 @@ sudo modprobe cvitek_remoteproc
 echo blink.elf | sudo tee /sys/class/remoteproc/remoteproc0/firmware
 echo start | sudo tee /sys/class/remoteproc/remoteproc0/state
 ```
-
-Before starting, check `cat /sys/class/remoteproc/remoteproc0/state`; if it already says `running`, stop the current firmware first with `echo stop | sudo tee /sys/class/remoteproc/remoteproc0/state`.
 
 If you get a `No such file or directory` error, your elf was probably not copied into `/lib/firmware`.
 
