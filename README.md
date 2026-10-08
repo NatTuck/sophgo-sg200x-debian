@@ -37,6 +37,89 @@ cvi_update
 
 The flashing should then continue
 
+## Running Arduino Sketches
+
+Running Arduino sketches on the second core requires an image built with `SECOND_CPU=arduino`.
+
+> *On the Oz64, you can compile sketches with Arduino IDE, but you cannot upload it through its USB host port. Copy the compiled ELF onto the board and start it using remoteproc.*
+
+First, download and install [Arduino CLI](https://docs.arduino.cc/arduino-cli/installation/) for your system.
+- On macOS, you can use brew:
+```
+brew update
+brew install arduino-cli
+```
+- On Linux, it's easiest to install it using their installer:
+```
+curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+```
+This will install to `$PWD/bin`. Make sure the installation directory is in your environment's PATH.
+
+Then install the (forked) `sophgo-arduino` core, which includes support for the following boards:
+
+- MilkV Duo
+- MilkV Duo256
+- MilkV DuoS
+- PINE64 Oz64
+
+```
+arduino-cli config add board_manager.additional_urls https://github.com/granimated/sophgo-arduino/releases/download/v0.2.7/package_sg200x_index.json
+arduino-cli core update-index
+arduino-cli core install sophgo:SG200X
+```
+
+You can verify that you have support for your board with:
+```
+arduino-cli board listall
+```
+
+> *If the PINE64 Oz64 isn't listed, you likely have a stale board manager URL in your config. The above is a fork that specifically adds support.*
+
+Then, compile the sketch for your platform. E.g., use `duos` for the MilkV DuoS or `oz64` for the PINE64 Oz64.
+
+```bash
+mkdir -p Blink1
+cat << 'EOF' > Blink1/Blink1.ino
+#define LED_PIN 7
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_PIN, HIGH);
+  delay(100);
+  digitalWrite(LED_PIN, LOW);
+  delay(100);
+}
+EOF
+
+arduino-cli compile --fqbn sophgo:SG200X:oz64 --build-path Blink1/build Blink1
+
+ls Blink1/build
+# expected:
+# Blink1.ino.bin  Blink1.ino.hex  build.options.json     core            libraries        sketch
+# Blink1.ino.elf  Blink1.ino.map  compile_commands.json  includes.cache  libraries.cache
+```
+
+Warnings about `_getpid_r` and `_kill` are expected, but compilation must complete successfully before you upload the `.elf`.
+
+Compilation must complete successfully, otherwise you may upload a stale ELF on accident. After you have your firmware `.elf`, copy it onto the board and start it. Example with SSH:
+
+```
+# on host, replace oz64 with your board hostname/IP
+scp Blink1/build/Blink1.ino.elf debian@oz64:/tmp/blink.elf
+ssh debian@oz64
+
+# on dev board
+sudo cp /tmp/blink.elf /lib/firmware/blink.elf
+echo blink.elf | sudo tee /sys/class/remoteproc/remoteproc0/firmware
+echo start | sudo tee /sys/class/remoteproc/remoteproc0/state
+```
+
+If you get a `No such file or directory` error, your elf was probably not copied into `/lib/firmware`.
+
+If you get an error about the device being unavailable or busy, make sure to stop any existing firmware by setting `state` to `stop`.
 
 ## Image Info
 Logins: root/rv and debian/rv
@@ -74,7 +157,7 @@ For the LicheeRVNano/DuoS/Oz64 boards, WiFi is enabled. To connect to your wifi 
 ```
 touch /boot/wifi.sta
 echo "My WiFi" | tee /boot/wifi.ssid
-echo "Pa$$w0rd" /boot/wifi.pass
+printf '%s\n' 'Pa$$w0rd' | tee /boot/wifi.pass
 ```
 
 ### Ethernet
