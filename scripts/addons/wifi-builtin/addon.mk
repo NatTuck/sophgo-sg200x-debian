@@ -35,7 +35,7 @@ $(BUILDDIR)/wifi-builtin-stamp: $(BUILDDIR)/buildroot-prepare-checkout-stamp
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build wifi-builtin-$(BOARD_EXT)-$(WIFIBIVERSION) wifi-builtin-$(BOARD_EXT)_$(WIFIBIVERSION)$(BV)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/wifi-builtin-$(BOARD_EXT)_$(WIFIBIVERSION)$(BV)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/wifi-builtin-*.deb /rootfs/tmp/install/
+	@cp /output/wifi-builtin-$(BOARD_EXT)_$(WIFIBIVERSION)$(BV)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing wifi-builtin for $(BOARD)$(END_COLOUR)"
 	@mkdir -pv /rootfs/etc/network/interfaces.d/
 	@cp -a addons/wifi-builtin/wlan0 /rootfs/etc/network/interfaces.d/

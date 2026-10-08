@@ -14,7 +14,7 @@ $(BUILDDIR)/usb-switch-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build usb-switch-$(BOARD)-$(USBSWITCHVERSION) usb-switch-$(BOARD)_$(USBSWITCHVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/usb-switch-$(BOARD)_$(USBSWITCHVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/usb-switch-*.deb /rootfs/tmp/install/
+	@cp /output/usb-switch-$(BOARD)_$(USBSWITCHVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing USB Switch for $(BOARD)$(END_COLOUR)"
 	@mkdir -p /rootfs/tmp/install/
 	@touch $@

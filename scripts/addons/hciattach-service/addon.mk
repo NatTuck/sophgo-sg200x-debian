@@ -11,7 +11,7 @@ $(BUILDDIR)/hciattach-uart-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build hciattach-uart-$(BOARD)-$(HCIATTACHVERSION) hciattach-uart-$(BOARD)_$(HCIATTACHVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/hciattach-uart-$(BOARD)_$(HCIATTACHVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/hciattach-uart-*.deb /rootfs/tmp/install/
+	@cp /output/hciattach-uart-$(BOARD)_$(HCIATTACHVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing hciattach systemd service for $(BOARD)$(END_COLOUR)"
 	@mkdir -p /rootfs/tmp/install/
 	@echo " hciattach bluetooth" >> /rootfs/tmp/install/systemd-enable
