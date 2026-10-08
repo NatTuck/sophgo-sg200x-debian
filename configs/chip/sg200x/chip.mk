@@ -910,9 +910,9 @@ fsbl-clean:
 
 $(BUILDDIR)/image-prepare-stamp: 
 	@echo "$(COLOUR_GREEN)Preparing Image for $(BOARD)$(END_COLOUR)"
-	@-mkdir $(BUILDDIR)
+	@mkdir -p $(BUILDDIR)
 	@if mountpoint -q /rootfs; then find /rootfs -mindepth 1 -maxdepth 1 -exec rm -rf {} + ; else rm -rf /rootfs ; fi
-	@-rm $(addon-targets)
+	@rm -f $(addon-targets)
 	@mkdir -p /rootfs/
 	@[ "X$(DEB_PUBKEY)" = "X" ] || gpg --recv-key --keyserver $(DEB_KEYSERVER) $(DEB_PUBKEY) || true
 	@[ "X$(DEB_PUBKEY)" = "X" ] || gpg --export $(DEB_PUBKEY) > /etc/apt/trusted.gpg.d/distro-archive-keyring.gpg
