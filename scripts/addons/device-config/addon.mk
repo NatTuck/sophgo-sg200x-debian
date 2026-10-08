@@ -68,4 +68,7 @@ sensor-config: $(BUILDDIR)/sensor-config-install-stamp $(BUILDDIR)/sensor-config
 
 $(BUILDDIR)/sensor-config-stamp: firmware-vcodec sensor-config
 	@echo "$(COLOUR_GREEN)Installing sensor-config for $(BOARD)$(END_COLOUR)"
+	@mkdir -p /rootfs/tmp/install/
+	@cp /output/firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
+	@cp /output/sensor-config-$(BOARD)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@touch $@
