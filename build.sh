@@ -92,7 +92,7 @@ apt_vol="$PREFIX-apt"
 
 # Fingerprint of the make variables (KEY=VALUE args); used to detect
 # image-personalisation changes that the make stamps cannot see.
-fingerprint=$(for a in "$@"; do case "$a" in *=*) printf '%s\n' "$a" ;; esac; done)
+fingerprint=$(for a in "$@"; do case "$a" in (*=*) printf '%s\n' "$a" ;; esac; done)
 state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/sg200x"
 state_file="$state_dir/$key.vars"
 
