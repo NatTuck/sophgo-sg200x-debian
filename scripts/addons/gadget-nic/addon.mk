@@ -7,7 +7,7 @@ $(BUILDDIR)/gadget-nic-stamp:
 	@mkdir -pv $(GADGETNIC_PACKAGE_DIR)/etc/init.d/
 	@cp -a addons/gadget-nic/S30gadget_nic $(GADGETNIC_PACKAGE_DIR)/etc/init.d/
 	@chmod +x $(GADGETNIC_PACKAGE_DIR)/etc/init.d/S30gadget_nic
-	@ln -s S30gadget_nic $(GADGETNIC_PACKAGE_DIR)/etc/init.d/S30rndis
+	@ln -sf S30gadget_nic $(GADGETNIC_PACKAGE_DIR)/etc/init.d/S30rndis
 	@mkdir -pv $(GADGETNIC_PACKAGE_DIR)/etc/systemd/system/
 	@cp -a addons/gadget-nic/gadget-nic*.service $(GADGETNIC_PACKAGE_DIR)/etc/systemd/system/
 	@sed -i 's/Architecture: riscv64/Architecture: $(DEB_ARCH)/' $(GADGETNIC_PACKAGE_DIR)/DEBIAN/control
