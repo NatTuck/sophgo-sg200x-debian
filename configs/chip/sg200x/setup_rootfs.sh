@@ -139,10 +139,16 @@ EOF
 
 [ ! -e /usr/bin/run-parts ] || sed -i 's|(run-parts |(/usr/bin/run-parts |g' /etc/profile
 
-# 
+#
 # Enable system services
 #
 systemctl enable finalize-image.service
+
+# Serial console login (useful for debugging; the kernel console alone gives
+# no login prompt).
+mkdir -p /etc/systemd/system/getty.target.wants
+ln -sf /lib/systemd/system/serial-getty@.service \
+       /etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service
 
 # Update source list 
 
@@ -161,7 +167,16 @@ cat > /etc/apt/sources.list.d/scpcom-packages.list < /tmp/install/deb_user_sourc
 cat >> /etc/systemd/journald.conf <<EOJ
 RuntimeMaxUse=16M
 RuntimeMaxFileSize=2M
+Storage=persistent
+SyncIntervalSec=10s
 EOJ
+
+# Bound DHCP waiting so a cable-less or slow-associating interface does not
+# stall the boot for the default 30s per interface (end0 + wlan0 were adding
+# ~55s to userspace boot).
+if [ -f /etc/dhcpcd.conf ] && ! grep -qE '^[[:space:]]*timeout[[:space:]]' /etc/dhcpcd.conf; then
+	printf 'timeout 10\n' >> /etc/dhcpcd.conf
+fi
 
 
 #
