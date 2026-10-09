@@ -14,7 +14,7 @@ $(BUILDDIR)/firmware-vcodec-package-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build firmware-vcodec-$(CHIP)-$(MIDDLEWAREVERSION) firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/firmware-vcodec-$(CHIP)*.deb /rootfs/tmp/install/
+	@cp /output/firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@touch $@
 
 firmware-vcodec: $(BUILDDIR)/firmware-vcodec-package-stamp
