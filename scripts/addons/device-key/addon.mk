@@ -19,7 +19,7 @@ $(BUILDDIR)/device-key-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build device-key-$(BOARD)-$(DEVICEKEYVERSION) device-key-$(BOARD)_$(DEVICEKEYVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/device-key-$(BOARD)_$(DEVICEKEYVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/device-key-*.deb /rootfs/tmp/install/
+	@cp /output/device-key-$(BOARD)_$(DEVICEKEYVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing device-key for $(BOARD)$(END_COLOUR)"
 	@mkdir -pv /rootfs/boot/
 	@[ "$(BOARD)" = "licheervnano" ] || echo $(BOARD) > /rootfs/boot/hostname.prefix

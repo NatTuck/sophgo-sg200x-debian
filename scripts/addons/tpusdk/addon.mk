@@ -150,4 +150,8 @@ tpusdk-clean:
 	@rm -f $(BUILDDIR)/tpusdk-*-stamp
 
 $(BUILDDIR)/tpusdk-stamp: $(BUILDDIR)/tpusdk-package-stamp
+	@$(eval TPUSDKVERSION=$(shell echo "2024.12.10"))
+	@$(eval TV=$(shell cd $(BUILDDIR)/tpusdk && git log -1 --format="%at" | xargs -I{} date -d @{} +-%Y%m%d-${KERNELREV}))
+	@mkdir -p /rootfs/tmp/install/
+	@cp /output/cvitek-tpusdk-$(BOARD)_$(TPUSDKVERSION)$(TV)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@touch $@

@@ -30,7 +30,7 @@ $(BUILDDIR)/load-systemko-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build load-systemko-$(BOARD)-$(OSDRVVERSION) load-systemko-$(BOARD)_$(OSDRVVERSION)$(LSKV)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/load-systemko-$(BOARD)_$(OSDRVVERSION)$(LSKV)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/load-systemko-*.deb /rootfs/tmp/install/
+	@cp /output/load-systemko-$(BOARD)_$(OSDRVVERSION)$(LSKV)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing load-systemko for $(BOARD)$(END_COLOUR)"
 	@mkdir -p /rootfs/tmp/install/
 	@echo " load-systemko" >> /rootfs/tmp/install/systemd-enable

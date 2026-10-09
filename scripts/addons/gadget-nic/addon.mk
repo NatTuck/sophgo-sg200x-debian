@@ -20,7 +20,7 @@ $(BUILDDIR)/gadget-nic-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build gadget-nic-$(BOARD)-$(GADGETNICVERSION) gadget-nic-$(BOARD)_$(GADGETNICVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/gadget-nic-$(BOARD)_$(GADGETNICVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/gadget-nic-*.deb /rootfs/tmp/install/
+	@cp /output/gadget-nic-$(BOARD)_$(GADGETNICVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing gadget-nic for $(BOARD)$(END_COLOUR)"
 	@if [ "X$(findstring kvm,$(VARIANT))" = "X" ]; then \
 		mkdir -pv /rootfs/boot/ ; \

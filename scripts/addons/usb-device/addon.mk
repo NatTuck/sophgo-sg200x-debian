@@ -31,7 +31,7 @@ $(BUILDDIR)/usb-device-stamp: $(BUILDDIR)/buildroot-prepare-checkout-stamp
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build usb-device-$(BOARD_EXT)-$(USBDEVVERSION) usb-device-$(BOARD_EXT)_$(USBDEVVERSION)$(BV)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/usb-device-$(BOARD_EXT)_$(USBDEVVERSION)$(BV)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/usb-device-*.deb /rootfs/tmp/install/
+	@cp /output/usb-device-$(BOARD_EXT)_$(USBDEVVERSION)$(BV)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@echo "$(COLOUR_GREEN)Installing usb-device for $(BOARD)$(END_COLOUR)"
 	@mkdir -pv /rootfs/boot/
 	@touch /rootfs/boot/usb.dev

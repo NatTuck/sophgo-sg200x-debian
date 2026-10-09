@@ -14,7 +14,7 @@ $(BUILDDIR)/firmware-vcodec-package-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build firmware-vcodec-$(CHIP)-$(MIDDLEWAREVERSION) firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/firmware-vcodec-$(CHIP)*.deb /rootfs/tmp/install/
+	@cp /output/firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@touch $@
 
 firmware-vcodec: $(BUILDDIR)/firmware-vcodec-package-stamp
@@ -61,11 +61,14 @@ $(BUILDDIR)/sensor-config-package-stamp:
 	@cd $(BUILDDIR)/package/ && dpkg-deb --build sensor-config-$(BOARD)-$(MIDDLEWAREVERSION) sensor-config-$(BOARD)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb
 	@cp $(BUILDDIR)/package/sensor-config-$(BOARD)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /output/
 	@mkdir -p /rootfs/tmp/install/
-	@cp /output/sensor-config-*.deb /rootfs/tmp/install/
+	@cp /output/sensor-config-$(BOARD)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@touch $@
 
 sensor-config: $(BUILDDIR)/sensor-config-install-stamp $(BUILDDIR)/sensor-config-package-stamp
 
 $(BUILDDIR)/sensor-config-stamp: firmware-vcodec sensor-config
 	@echo "$(COLOUR_GREEN)Installing sensor-config for $(BOARD)$(END_COLOUR)"
+	@mkdir -p /rootfs/tmp/install/
+	@cp /output/firmware-vcodec-$(CHIP)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
+	@cp /output/sensor-config-$(BOARD)_$(MIDDLEWAREVERSION)_$(DEB_ARCH).deb /rootfs/tmp/install/
 	@touch $@
