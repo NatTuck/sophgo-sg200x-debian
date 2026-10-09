@@ -9,12 +9,11 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot
+# Writes the wlan0 config; the udev-triggered ifup@wlan0 (ordered after this via
+# Before=ifup@wlan0 above) brings the interface up. An earlier ExecStartPost did
+# `ifdown --force wlan0; ifup wlan0` here, but ifdown tore down the working link
+# and the following ifup no-op'ed with "already configured", leaving wlan0 DOWN.
 ExecStart=busybox sh /etc/init.d/S30wifi start
-# After writing the interface config, make sure it actually comes up instead of
-# relying only on the udev-triggered ifup@wlan0 (which can lose the race on some
-# boots). The whole post action is capped by `timeout` (and `-` ignores the
-# timeout kill) so a missing/broken driver cannot hang the boot.
-ExecStartPost=-timeout 60 /bin/sh -c 'until [ -d /sys/class/net/wlan0 ]; do sleep 1; done; ifdown --force wlan0 2>/dev/null || true; for n in 1 2 3 4 5; do ifup wlan0 && break; sleep 3; done; true'
 
 [Install]
 WantedBy=multi-user.target
