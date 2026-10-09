@@ -146,9 +146,7 @@ systemctl enable finalize-image.service
 
 # Serial console login (useful for debugging; the kernel console alone gives
 # no login prompt).
-mkdir -p /etc/systemd/system/getty.target.wants
-ln -sf /lib/systemd/system/serial-getty@.service \
-       /etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service
+systemctl enable serial-getty@ttyS0.service
 
 # Update source list 
 
