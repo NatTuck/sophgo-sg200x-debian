@@ -5,11 +5,36 @@ then
 	. /etc/profile
 	aic8800_option=$(cat /proc/cmdline | tr ' ' '\n' | grep '^aic8800_bsp\.' | sed s/'^aic8800_bsp\.'/''/g | tail -1)
 	printf "load wifi kernel module: "
-	cd /mnt/system/ko/
+	cd /mnt/system/ko/ || exit 1
+
 	insmod cfg80211.ko
+
+	# Make sure the SDIO WiFi card is enumerated before loading the driver.
+	# The card is powered by the DT wifi_chip_en hog; this rescan only helps
+	# if the kernel's initial mmc probe missed it.
+	i=0
+	while [ ! -e /sys/bus/mmc/devices/mmc1:fe00 ] && [ $i -lt 20 ]; do
+		[ -d /sys/class/mmc_host/mmc1 ] && echo 1 > /sys/class/mmc_host/mmc1/rescan 2>/dev/null
+		sleep 0.5
+		i=$((i + 1))
+	done
+
 	insmod 3rd/aic8800_bsp.ko $aic8800_option
 	insmod 3rd/aic8800_fdrv.ko
 	insmod 3rd/8733bs.ko
-	echo "OK"
+
+	# aic8800_fdrv creates wlan0; verify it appeared and retry the driver once.
+	i=0
+	while [ ! -d /sys/class/net/wlan0 ] && [ $i -lt 10 ]; do
+		sleep 0.5
+		[ -d /sys/class/net/wlan0 ] || insmod 3rd/aic8800_fdrv.ko 2>/dev/null
+		i=$((i + 1))
+	done
+
+	if [ -d /sys/class/net/wlan0 ]; then
+		echo "OK"
+	else
+		echo "FAILED (no wlan0)"
+	fi
 	exit 0
 fi
