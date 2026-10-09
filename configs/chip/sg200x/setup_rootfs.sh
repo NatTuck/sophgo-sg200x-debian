@@ -176,6 +176,17 @@ if [ -f /etc/dhcpcd.conf ] && ! grep -qE '^[[:space:]]*timeout[[:space:]]' /etc/
 	printf 'timeout 10\n' >> /etc/dhcpcd.conf
 fi
 
+# The vendor U-Boot env ships loglevel=0, which suppresses kernel messages on
+# the serial console - including kernel panics (e.g. an SD card that mis-
+# enumerates and fails to mount root). Raise it to warnings/errors so boot
+# failures are visible, and regenerate the FAT env so U-Boot picks it up.
+if [ -e /etc/u-boot-initial-env ] && grep -q 'loglevel=0' /etc/u-boot-initial-env; then
+	sed -i 's/loglevel=0/loglevel=4/' /etc/u-boot-initial-env
+	if command -v mkenvimage >/dev/null 2>&1; then
+		mkenvimage -s 0x20000 -o /boot/uboot.env /etc/u-boot-initial-env
+	fi
+fi
+
 
 #
 # Clean apt cache on the system
